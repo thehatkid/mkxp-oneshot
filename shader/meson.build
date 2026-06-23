@@ -1,42 +1,36 @@
-shaders_src = [
+mkxp_shaders = files(
     'common.h',
-    'bitmapBlit.frag',
-    'blur.frag',
-    'flashMap.frag',
-    'flatColor.frag',
-    'gray.frag',
-    'hue.frag',
-    'obscured.frag',
-    'plane.frag',
+    'minimal.vert',
+    'simple.vert',
+    'simple.frag',
+    'simpleMatrix.vert',
+    'simpleColor.vert',
+    'simpleColor.frag',
     'simpleAlpha.frag',
     'simpleAlphaUni.frag',
-    'simpleColor.frag',
-    'simple.frag',
+    'flatColor.frag',
+    'bitmapBlit.frag',
+    'sprite.vert',
     'sprite.frag',
-    'trans.frag',
-    'transSimple.frag',
-
+    'plane.frag',
+    'tilemap.vert',
+    'flashMap.frag',
+    'gray.frag',
+    'hue.frag',
+    'blur.frag',
     'blurH.vert',
     'blurV.vert',
-    'minimal.vert',
-    'simpleColor.vert',
-    'simpleMatrix.vert',
-    'simple.vert',
-    'sprite.vert',
-    'tilemap.vert',
-]
+    'trans.frag',
+    'transSimple.frag',
+    'obscured.frag'
+)
 
-embedded_shaders_f = files(shaders_src)
+shader_gen = generator(
+    xxd,
+    arguments: ['-i', '-n', 'shader_@PLAINNAME@', '@INPUT@', '@OUTPUT@'],
+    output: '@PLAINNAME@.xxd'
+)
 
-count = 0
-foreach file : embedded_shaders_f
-    global_sources += custom_target(shaders_src[count],
-        input: file,
-        output: '@0@.xxd'.format(shaders_src[count]),
-        command: [
-            xxd, '@INPUT@', '--symbol', 'shader_@PLAINNAME@'
-        ],
-        depend_files: embedded_shaders_f[count]
-        )
-    count += 1
-endforeach
+mkxp_shaders_xxd = shader_gen.process(mkxp_shaders)
+
+mkxp_sources += mkxp_shaders_xxd

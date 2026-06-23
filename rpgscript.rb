@@ -1,4 +1,5 @@
 #!/usr/bin/ruby
+
 require 'zlib'
 
 def usage

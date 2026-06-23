@@ -1,155 +1,94 @@
-# ModShot Meson project build file
 project(
-    'oneshot',
-    ['c', 'cpp'],
+    'mkxp-oneshot',
+    'c', 'cpp',
     version: '1.0.0',
-    license: 'GPL-2.0',
-    meson_version: '>=0.60.0',
+    license: 'GPL-2.0-or-later',
+    meson_version: '>=0.58.0',
     default_options: [
-        'cpp_std=c++17',
-        'buildtype=release'
+        'cpp_std=c++14',
+        'c_std=c11',
+        'warning_level=1',
+        'buildtype=debug',
+        'b_ndebug=if-release',
+        'prefer_static=true'
     ]
 )
 
 host_system = host_machine.system()
 
-compilers = {
-    'cpp': meson.get_compiler('cpp')
-}
+cc = meson.get_compiler('c')
+cxx = meson.get_compiler('cpp')
 
-xxd_proj = subproject('xxd+')
-xxd = xxd_proj.get_variable('xxd_binary')
-# do_xxd = files('do_xxd.sh')
-bash = find_program('bash')
-ruby = find_program('ruby', native: true, dirs: get_option('mri_bin'))
+is_debug = get_option('debug')
+is_steam = get_option('steam')
+is_64bit = (cc.sizeof('void*') == 8)
 
-global_sources = []
-global_dependencies = []
-global_include_dirs = []
-global_args = []
-global_link_args = []
+xxd = find_program('xxd', native: true, required: true)
+ruby = find_program('ruby', native: true, required: true)
 
-sizeof = {
-    'void*': compilers['cpp'].sizeof('void*'),
-    'long': compilers['cpp'].sizeof('long')
-}
-win64 = (sizeof['void*'] != sizeof['long'])
+mkxp_name = 'oneshot'
+mkxp_sources = []
+mkxp_includes = []
+mkxp_dependencies = []
+mkxp_cflags = [
+    '-DHAVE_NANOSLEEP'
+]
+mkxp_ldflags = []
 
-global_args += '-DHAVE_NANOSLEEP'
-global_args += '-DONESHOT_DISABLE_GLDEBUG'
+if not is_debug
+    mkxp_cflags += '-DONESHOT_DISABLE_GLDEBUG'
+endif
 
 gfx_backend = get_option('gfx_backend')
-if gfx_backend == 'gles'
-    global_args += '-DGLES2_HEADER'
-elif gfx_backend == 'gl'
-    global_dependencies += dependency('gl')
+if gfx_backend == 'gl'
+    mkxp_dependencies += dependency('gl', static: false)
+elif gfx_backend == 'gles'
+    mkxp_cflags += '-DGLES2_HEADER'
+else
+    error('Unknown "gfx_backend" option value: @0@'.format(gfx_backend))
 endif
 
-# ====================
-# Main source
-# ====================
-
-# Suppress warnings
-global_args += [
-    '-Wno-non-virtual-dtor',
-#    '-Wno-reorder',
-#    '-Wno-uninitialized',
-#    '-Wno-unknown-pragmas',
-#    '-Wno-stringop-truncation',
-#    '-Wno-parentheses',
-#    '-Wno-sign-compare',
-#    '-Wno-misleading-indentation'
-]
-
-if compilers['cpp'].get_id() == 'clang'
-    global_args += [
-        '-Wno-undefined-var-template',
-        '-Wno-delete-non-abstract-non-virtual-dtor'
-    ]
-endif
-
-if host_system == 'windows'
-	# Force usage of wchar syscalls in windows/mingw builds
-	global_args += '-DUNICODE'
-	# Per windows:
-	#     "Math Constants are not defined in Standard C/C++. 
-	#     To use them, you must first define _USE_MATH_DEFINES 
-	#     and then include cmath or math.h."
-	global_args += '-D_USE_MATH_DEFINES'
-    # Win32 Subsystem and Operating System version
-    # (default: 6.00 - Windows Vista/7 and higher)
-    winnt_ver_args = [
-        '-Wl,--major-subsystem-version=6',
-        '-Wl,--minor-subsystem-version=0',
-        '-Wl,--major-os-version=6',
-        '-Wl,--minor-os-version=0'
-    ]
-    global_link_args += winnt_ver_args
-
-    if compilers['cpp'].get_id() != 'clang'
-        global_args += '-masm=intel'
-    endif
-endif
-
-# Defines
 if get_option('workdir_current')
-    global_args += '-DWORKDIR_CURRENT'
+    mkxp_cflags += '-DWORKDIR_CURRENT'
 endif
 
-steam = get_option('steam')
-
-build_static = get_option('build_static')
-static_win_only = false
 if host_system == 'windows'
-	static_win_only = build_static
+	# Use widechar versions of functions in Win32 API
+	mkxp_cflags += ['-DUNICODE', '-D_UNICODE']
+
+	# Per Windows:
+	#   "Math Constants are not defined in Standard C/C++.
+	#   To use them, you must first define _USE_MATH_DEFINES
+	#   and then include cmath or math.h."
+	mkxp_cflags += '-D_USE_MATH_DEFINES'
 endif
 
-# Project subdirectories
+subdir('assets')
+subdir('shader')
+subdir('scripts')
 subdir('src')
 subdir('binding-mri')
-subdir('shader')
-subdir('assets')
-subdir('scripts')
-
-sdlsound_proj = subproject('sdlsound_2')
-global_dependencies += [sdlsound_proj.get_variable('sdlsound_dep')]
-
-
-global_include_dirs += include_directories('binding-mri')
-
-rpath = ''
-if host_system == 'windows'
-    subdir('windows')
-    global_sources += windows_resources
-    global_include_dirs += include_directories('windows')
-else
-    #subdir('linux')
-    rpath = '$ORIGIN'
-endif
-
-exe_name = meson.project_name()
-
 
 if get_option('copy_gamefiles')
 	# Copy game files to the build directory
 	install_subdir(
 		'oneshot',
 		install_dir: '',
-		strip_directory: true,
+		strip_directory: true
 	)
 endif
 
-# OneShot Build
+# mkxp executable
 executable(
-    exe_name,
-    sources: global_sources,
-    dependencies: global_dependencies,
-    include_directories: global_include_dirs,
-    install_rpath: rpath,
-    link_args: global_link_args,
-    cpp_args: global_args,
-    objc_args: global_args,
-    objcpp_args: global_args,
-    win_subsystem: 'windows',
+    mkxp_name,
+    sources: mkxp_sources,
+    include_directories: mkxp_includes,
+    dependencies: mkxp_dependencies,
+    c_args: mkxp_cflags,
+    cpp_args: mkxp_cflags,
+    link_args: mkxp_ldflags,
     install: true,
+    win_subsystem: 'windows,6.0',
+    build_rpath: '$ORIGIN',
+    install_rpath: '$ORIGIN'
 )

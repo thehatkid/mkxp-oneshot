@@ -1,19 +1,14 @@
-embedded_assets = [
+mkxp_assets = files(
     'icon.png',
     'gamecontrollerdb.txt'
-]
+)
 
-embedded_assets_f = files(embedded_assets)
+assets_gen = generator(
+    xxd,
+    arguments: ['-i', '-n', 'assets_@PLAINNAME@', '@INPUT@', '@OUTPUT@'],
+    output: '@PLAINNAME@.xxd'
+)
 
-count = 0
-foreach file : embedded_assets_f
-    global_sources += custom_target(embedded_assets[count],
-    input: file,
-    output: '@0@.xxd'.format(embedded_assets[count]),
-    command: [
-        xxd, '@INPUT@', '--symbol', 'assets_@PLAINNAME@'
-    ],
-    depend_files: embedded_assets_f[count]
-    )
-    count += 1
-endforeach
+mkxp_assets_xxd = assets_gen.process(mkxp_assets)
+
+mkxp_sources += mkxp_assets_xxd
