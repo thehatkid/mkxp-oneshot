@@ -591,10 +591,30 @@ static void mriBindingExecute()
 	char **argv = 0;
 	ruby_sysinit(&argc, &argv);
 
+	RUBY_INIT_STACK;
+
 	ruby_setup();
-	rb_enc_set_default_external(rb_enc_from_encoding(rb_utf8_encoding()));
 
 	Config &conf = shState->rtData().config;
+
+	std::vector<const char *> rubyArgsC {"oneshot"};
+	rubyArgsC.push_back("-e ");
+
+	void *node = ruby_options(rubyArgsC.size(), const_cast<char**>(rubyArgsC.data()));
+
+	int state = 0;
+    bool valid = ruby_executable_node(node, &state);
+    if (valid)
+        state = ruby_exec_node(node);
+    if (state || !valid) {
+        showMsg("An error occurred while initializing Ruby");
+        ruby_cleanup(state);
+		shState->rtData().allowExit.set();
+        shState->rtData().rqTermAck.set();
+        return;
+    }
+    rb_enc_set_default_internal(rb_enc_from_encoding(rb_utf8_encoding()));
+    rb_enc_set_default_external(rb_enc_from_encoding(rb_utf8_encoding()));
 
 	if (!conf.rubyLoadpaths.empty())
 	{

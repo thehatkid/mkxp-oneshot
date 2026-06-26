@@ -80,19 +80,11 @@ raiseRbExc(const Exception &exc);
 
 #if RUBY_API_TRIPLET < 270
 #define DEF_TYPE_CUSTOMNAME_AND_FREE(Klass, Name, Free) \
-	rb_data_type_t Klass##Type = { \
-		Name, {0, Free, 0, {0, 0}}, 0, 0, DEF_TYPE_FLAGS \
-	}
+	rb_data_type_t Klass##Type = { Name, { 0, Free, 0, { 0, 0 } }, 0, 0, DEF_TYPE_FLAGS }
 #else
 #define DEF_TYPE_CUSTOMNAME_AND_FREE(Klass, Name, Free) \
-rb_data_type_t Klass##Type = {Name, {0, Free, 0, 0, 0}, 0, 0, DEF_TYPE_FLAGS}
+	rb_data_type_t Klass##Type = { Name, { 0, Free, 0, 0, 0 }, 0, 0, DEF_TYPE_FLAGS }
 #endif
-/*
-#define DEF_TYPE_CUSTOMNAME_AND_FREE(Klass, Name, Free) \
-	rb_data_type_t Klass##Type = { \
-		Name, { 0, Free, 0, { 0, 0 } }, 0, 0, DEF_TYPE_FLAGS \
-	}
-*/
 
 #define DEF_TYPE_CUSTOMFREE(Klass, Free) \
 	DEF_TYPE_CUSTOMNAME_AND_FREE(Klass, #Klass, Free)
@@ -106,7 +98,7 @@ template<rb_data_type_t *rbType>
 static VALUE classAllocate(VALUE klass)
 {
 /* 2.3 has changed the name of this function */
-#if RUBY_API_VERSION_MAJOR >= 2 && RUBY_API_VERSION_MINOR >= 3
+#if RUBY_API_TRIPLET >= 230
 	return rb_data_typed_object_wrap(klass, 0, rbType);
 #else
 	return rb_data_typed_object_alloc(klass, 0, rbType);
