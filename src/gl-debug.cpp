@@ -79,19 +79,21 @@ static void APIENTRY arbDebugFunc(GLenum source,
 
 GLDebugLogger::GLDebugLogger(const char *filename)
 {
-	#ifndef ONESHOT_DISABLE_GLDEBUG
+#ifndef ONESHOT_DISABLE_GLDEBUG
 	p = new GLDebugLoggerPrivate(filename);
 
 	if (gl.DebugMessageCallback)
 		gl.DebugMessageCallback(arbDebugFunc, p);
 	else
 		Debug() << "DebugLogger: no debug extensions found";
-	#else
+#else
 	Debug() << "GLDEBUG messages disabled.";
-	#endif
+#endif
 }
 
 GLDebugLogger::~GLDebugLogger()
 {
+#ifndef ONESHOT_DISABLE_GLDEBUG
 	delete p;
+#endif
 }
