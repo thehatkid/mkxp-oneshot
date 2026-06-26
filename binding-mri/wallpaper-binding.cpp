@@ -4,8 +4,6 @@
 #include <vector>
 #include <map>
 
-#include <boost/algorithm/string/replace.hpp>
-
 #include "etc.h"
 #include "sharedstate.h"
 #include "binding-util.h"
@@ -252,6 +250,19 @@
 	}
 #endif
 
+inline void replace_all(std::string &str, const std::string &from, const std::string &to)
+{
+    if (from.empty())
+		return;
+
+    size_t pos = 0;
+    while ((pos = str.find(from, pos)) != std::string::npos)
+	{
+        str.replace(pos, from.length(), to);
+        pos += to.length();
+    }
+}
+
 RB_METHOD(wallpaperSet)
 {
 	RB_UNUSED_PARAM;
@@ -413,9 +424,9 @@ end:
 		} else if (desktop == "kde") {
 			std::stringstream command;
 			std::string concatPath(gameDirStr + path);
-			boost::replace_all(concatPath, "\\", "\\\\");
-			boost::replace_all(concatPath, "\"", "\\\"");
-			boost::replace_all(concatPath, "'", "\\x27");
+			replace_all(concatPath, "\\", "\\\\");
+			replace_all(concatPath, "\"", "\\\"");
+			replace_all(concatPath, "'", "\\x27");
 			command << "qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript 'string:" <<
 				"var allDesktops = desktops();" <<
 				"for (var i = 0, l = allDesktops.length; i < l; ++i) {" <<
@@ -522,9 +533,9 @@ RB_METHOD(wallpaperReset)
 						<< "plugin: \"" << x.second << "\"";
 				if (defPictures.find(x.first) != defPictures.end()) {
 					std::string picture = defPictures[x.first];
-					boost::replace_all(picture, "\\", "\\\\");
-					boost::replace_all(picture, "\"", "\\\"");
-					boost::replace_all(picture, "'", "\\x27");
+					replace_all(picture, "\\", "\\\\");
+					replace_all(picture, "\"", "\\\"");
+					replace_all(picture, "'", "\\x27");
 					command << ", picture: \"" << picture << "\"";
 				}
 				if (defColors.find(x.first) != defColors.end()) {

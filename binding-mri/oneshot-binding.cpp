@@ -6,7 +6,7 @@
 #include "eventthread.h"
 
 #include <SDL.h>
-#include <boost/crc.hpp>
+#include <zlib.h>
 
 RB_METHOD(oneshotSetYesNo)
 {
@@ -94,11 +94,10 @@ RB_METHOD(oneshotCRC32)
 {
 	RB_UNUSED_PARAM;
 	VALUE string;
-	boost::crc_32_type result;
 	rb_get_args(argc, argv, "S", &string RB_ARG_END);
-	std::string str = std::string(RSTRING_PTR(string), RSTRING_LEN(string));
-	result.process_bytes(str.data(), str.length());
-	return UINT2NUM(result.checksum());
+	uLong crc = crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, reinterpret_cast<const Bytef*>(RSTRING_PTR(string)), RSTRING_LEN(string));
+	return UINT2NUM(crc);
 }
 
 void oneshotBindingInit()

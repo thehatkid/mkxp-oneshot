@@ -22,8 +22,9 @@
 #ifndef BOOSTHASH_H
 #define BOOSTHASH_H
 
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/unordered/unordered_set.hpp>
+// Need to use Map and Set, unordered can't handle pair apparently
+#include <map>
+#include <set>
 
 #include <utility>
 
@@ -34,12 +35,10 @@ template<typename K, typename V>
 class BoostHash
 {
 private:
-	typedef boost::unordered_map<K, V> BoostType;
-	typedef std::pair<K, V> PairType;
-	BoostType p;
+	std::map<K, V> p = {};
 
 public:
-	typedef typename BoostType::const_iterator const_iterator;
+	typedef typename std::map<K, V>::const_iterator const_iterator;
 
 	inline bool contains(const K &key) const
 	{
@@ -50,7 +49,7 @@ public:
 
 	inline void insert(const K &key, const V &value)
 	{
-		p.insert(PairType(key, value));
+		p[key] = value;
 	}
 
 	inline void remove(const K &key)
@@ -92,17 +91,21 @@ public:
 	{
 		return p.cend();
 	}
+
+	inline void clear()
+	{
+		p.clear();
+	}
 };
 
 template<typename K>
 class BoostSet
 {
 private:
-	typedef boost::unordered_set<K> BoostType;
-	BoostType p;
+	std::set<K> p;
 
 public:
-	typedef typename BoostType::const_iterator const_iterator;
+	typedef typename std::set<K>::const_iterator const_iterator;
 
 	inline bool contains(const K &key)
 	{

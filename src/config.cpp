@@ -21,10 +21,6 @@
 
 #include "config.h"
 
-#include <boost/program_options/options_description.hpp>
-#include <boost/program_options/parsers.hpp>
-#include <boost/program_options/variables_map.hpp>
-
 #include <physfs.h>
 
 #include <fstream>
@@ -34,6 +30,8 @@
 #include "debugwriter.h"
 #include "util.h"
 #include "sdl-util.h"
+
+#include "CLI11.hpp"
 
 namespace std
 {
@@ -64,7 +62,6 @@ std::set<T> setFromVec(const std::vector<T> &vec)
 }
 
 typedef std::vector<std::string> StringVec;
-namespace po = boost::program_options;
 
 #define CONF_FILE "oneshot.conf"
 
@@ -93,12 +90,10 @@ void Config::read(int argc, char *argv[])
 	PO_DESC(maxTextureSize, int, 0) \
 	PO_DESC(gameFolder, std::string, ".") \
 	PO_DESC(allowSymlinks, bool, false) \
+	PO_DESC(pathCache, bool, true) \
 	PO_DESC(iconPath, std::string, "") \
 	PO_DESC(SE.sourceCount, int, 6) \
-	PO_DESC(pathCache, bool, true)
-
-// Not gonna take your shit boost
-#define GUARD_ALL( exp ) try { exp } catch(...) {}
+	PO_DESC(useScriptNames, bool, false)
 
 	editor.debug = false;
 	editor.battleTest = false;
@@ -121,26 +116,35 @@ void Config::read(int argc, char *argv[])
 		}
 	}
 
-#define PO_DESC(key, type, def) (#key, po::value< type >()->default_value(def))
+	CLI::App app {};
 
-	po::options_description podesc;
-	podesc.add_options()
-	        PO_DESC_ALL
-	        ("preloadScript", po::value<StringVec>()->composing()->default_value(StringVec()))
-	        ("fontSub", po::value<StringVec>()->composing()->default_value(StringVec()))
-	        ("rubyLoadpath", po::value<StringVec>()->composing()->default_value(StringVec()))
-	        ;
+	/* Don't care about console help message */
+	app.set_help_flag();
 
-	po::variables_map vm;
+	/* Use TOML format for parsing config files */
+	app.config_formatter(std::make_shared<CLI::ConfigTOML>());
+
+	/* Add all config options */
+#define PO_DESC(key, type, def) app.add_option<type>("--" #key, key)->default_val(def);
+	PO_DESC_ALL
+	app.add_option("--preloadScript", preloadScripts)->allow_extra_args();
+	app.add_option("--fontSub", fontSubs)->allow_extra_args();
+	app.add_option("--rubyLoadpath", rubyLoadpaths)->allow_extra_args();
+#undef PO_DESC
+
+	/* Initialize config variables */
+#define PO_DESC(key, type, def) key = def;
+	PO_DESC_ALL
+#undef PO_DESC
+
+#undef PO_DESC_ALL
 
 	/* Parse command line options */
 	try
 	{
-		po::parsed_options cmdPo =
-			po::command_line_parser(argc, argv).options(podesc).run();
-		po::store(cmdPo, vm);
+		app.parse(argc, argv);
 	}
-	catch (po::error &error)
+	catch (const CLI::ParseError &error)
 	{
 		Debug() << "Command line:" << error.what();
 	}
@@ -152,28 +156,13 @@ void Config::read(int argc, char *argv[])
 	{
 		try
 		{
-			po::store(po::parse_config_file(confFile.stream(), podesc, true), vm);
-			po::notify(vm);
+			app.parse_from_stream(confFile.stream());
 		}
-		catch (po::error &error)
+		catch (const CLI::Error &error)
 		{
 			Debug() << CONF_FILE":" << error.what();
 		}
 	}
-
-#undef PO_DESC
-#define PO_DESC(key, type, def) GUARD_ALL( key = vm[#key].as< type >(); )
-
-	PO_DESC_ALL;
-
-	GUARD_ALL( preloadScripts = setFromVec(vm["preloadScript"].as<StringVec>()); );
-
-	GUARD_ALL( fontSubs = vm["fontSub"].as<StringVec>(); );
-
-	GUARD_ALL( rubyLoadpaths = vm["rubyLoadpath"].as<StringVec>(); );
-
-#undef PO_DESC
-#undef PO_DESC_ALL
 
 	SE.sourceCount = clamp(SE.sourceCount, 1, 64);
 
