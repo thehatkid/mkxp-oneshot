@@ -25,12 +25,4 @@ mkxp_shaders = files(
     'obscured.frag'
 )
 
-shader_gen = generator(
-    xxd,
-    arguments: ['-i', '-n', 'shader_@PLAINNAME@', '@INPUT@', '@OUTPUT@'],
-    output: '@PLAINNAME@.xxd'
-)
-
-mkxp_shaders_xxd = shader_gen.process(mkxp_shaders)
-
-mkxp_sources += mkxp_shaders_xxd
+mkxp_sources += embed.process(mkxp_shaders, extra_args: ['shader'])

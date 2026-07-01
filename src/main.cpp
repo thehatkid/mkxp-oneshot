@@ -184,7 +184,7 @@ static void setupWindowIcon(const Config &conf, SDL_Window *win)
 	SDL_RWops *iconSrc;
 
 	if (conf.iconPath.empty())
-		iconSrc = SDL_RWFromConstMem(assets_icon_png, assets_icon_png_len);
+		iconSrc = SDL_RWFromConstMem(mkxp_assets_icon_png, mkxp_assets_icon_png_len);
 	else
 		iconSrc = SDL_RWFromFile(conf.iconPath.c_str(), "rb");
 
@@ -387,8 +387,8 @@ int main(int argc, char *argv[])
 
 #ifndef STEAM
 	/* Add controller bindings from embedded controller DB */
-	SDL_RWops *controllerDB = SDL_RWFromConstMem(assets_gamecontrollerdb_txt,
-	                                             assets_gamecontrollerdb_txt_len);
+	SDL_RWops *controllerDB = SDL_RWFromConstMem(mkxp_assets_gamecontrollerdb_txt,
+	                                             mkxp_assets_gamecontrollerdb_txt_len);
 	SDL_GameControllerAddMappingsFromRW(controllerDB, 1);
 #endif
 

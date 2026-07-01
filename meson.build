@@ -23,8 +23,18 @@ is_debug = get_option('debug')
 is_steam = get_option('steam')
 is_64bit = (cc.sizeof('void*') == 8)
 
-xxd = find_program('xxd', native: true, required: true)
 ruby = find_program('ruby', native: true, required: true)
+
+embed = generator(
+    ruby,
+    arguments: [
+        meson.project_source_root() / 'tools' / 'embed.rb',
+        '@INPUT@',
+        '@OUTPUT@',
+        '@EXTRA_ARGS@'
+    ],
+    output: '@PLAINNAME@.xxd'
+)
 
 mkxp_name = 'oneshot'
 mkxp_sources = []
