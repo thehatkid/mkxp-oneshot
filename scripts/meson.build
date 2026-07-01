@@ -3,7 +3,7 @@ pack_scripts = custom_target(
     output: 'xScripts.rxdata',
     command: [
         ruby,
-        meson.project_source_root() / 'rpgscript.rb',
+        meson.project_source_root() / 'tools' / 'rpgscript.rb',
         '@CURRENT_SOURCE_DIR@',
         '@OUTPUT@'
     ],
