@@ -23,7 +23,8 @@
 #include "boost-hash.h"
 
 #include <stdint.h>
-#include <string.h>
+#include <string>
+#include <cstring>
 
 struct RGSS_entryData
 {

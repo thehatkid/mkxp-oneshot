@@ -25,6 +25,8 @@
   SOFTWARE.
 */
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "xdg-user-dir-lookup.h"
 
 #include <stdio.h>
