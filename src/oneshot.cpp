@@ -34,8 +34,7 @@
 		#include <dispatch/dispatch.h>
 	#else
 		#define OS_LINUX
-		#include <gtk/gtk.h>
-		#include <gdk/gdk.h>
+		#include "gnome-fun.h"
 		#include "xdg-user-dir-lookup.h"
 	#endif
 #else
@@ -73,10 +72,18 @@ struct OneshotPrivate
 	std::vector<uint8_t> obscuredMap;
 	bool obscuredCleared;
 
+#ifdef OS_LINUX
+	bool gtkInit;
+#endif
+
 	OneshotPrivate()
 		: window(0),
 	      winMutex(SDL_CreateMutex())
 	{
+#ifdef OS_LINUX
+		gtkInit = false;
+		initGnomeFunctions();
+#endif
 	}
 
 	~OneshotPrivate()
@@ -93,6 +100,8 @@ struct linux_DialogData
 	int type;
 	const char *body;
 	const char *title;
+	const char *btnYes;
+	const char *btnNo;
 
 	// Output
 	bool result;
@@ -108,6 +117,7 @@ static int linux_dialog(void *rawData)
 	switch (data->type)
 	{
 		case Oneshot::MSG_INFO:
+		default:
 			gtktype = GTK_MESSAGE_INFO;
 			break;
 		case Oneshot::MSG_YESNO:
@@ -120,20 +130,27 @@ static int linux_dialog(void *rawData)
 		case Oneshot::MSG_ERR:
 			gtktype = GTK_MESSAGE_ERROR;
 			break;
-		default:
-			gtk_main_quit();
-			return 0;
 	}
 
 	// Display dialog and get result
-	GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, gtktype, gtkbuttons, "%s", data->body);
-	gtk_window_set_title(GTK_WINDOW(dialog), data->title);
-	int result = gtk_dialog_run(GTK_DIALOG(dialog));
-	gtk_widget_destroy(dialog);
+	GtkWidget *dialog = dynGtk.gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, gtktype, gtkbuttons, "%s", data->body);
+	dynGtk.gtk_window_set_title(GTK_WINDOW(dialog), data->title);
+
+	if (gtkbuttons == GTK_BUTTONS_YES_NO) {
+		GtkWidget *btnYes = dynGtk.gtk_dialog_get_widget_for_response(GTK_DIALOG(dialog), GTK_RESPONSE_YES);
+		GtkWidget *btnNo = dynGtk.gtk_dialog_get_widget_for_response(GTK_DIALOG(dialog), GTK_RESPONSE_NO);
+		if (btnYes)
+			dynGtk.gtk_button_set_label(GTK_BUTTON(btnYes), data->btnYes);
+		if (btnNo)
+			dynGtk.gtk_button_set_label(GTK_BUTTON(btnNo), data->btnNo);
+	}
+
+	int result = dynGtk.gtk_dialog_run(GTK_DIALOG(dialog));
+	dynGtk.gtk_widget_destroy(dialog);
 
 	// Interpret result and return
 	data->result = (result == GTK_RESPONSE_OK || result == GTK_RESPONSE_YES);
-	gtk_main_quit();
+	dynGtk.gtk_main_quit();
 	return 0;
 }
 #elif defined OS_W32
@@ -289,7 +306,11 @@ Oneshot::Oneshot(RGSSThreadData &threadData) :
 
 #ifdef OS_LINUX
 	char const* xdg_current_desktop = getenv("XDG_CURRENT_DESKTOP");
-	gtk_init(0, 0);
+
+	if (dynGtk.gtk_init_check != nullptr) {
+		if (dynGtk.gtk_init_check(nullptr, nullptr))
+			p->gtkInit = true;
+	}
 
 	if (xdg_current_desktop == NULL) {
 		desktopEnv = "nope";
@@ -492,12 +513,15 @@ bool Oneshot::msgbox(int type, const char *body, const char *title)
 {
 	if (!title)
 		title = "";
+
 #ifdef OS_LINUX
-	linux_DialogData data = {type, body, title, 0};
-	gdk_threads_add_idle(linux_dialog, &data);
-	gtk_main();
-	return data.result;
-#else
+	if (p->gtkInit) {
+		linux_DialogData data = {type, body, title, p->txtYes.c_str(), p->txtNo.c_str(), 0};
+		dynGlib.g_idle_add(linux_dialog, &data);
+		dynGtk.gtk_main();
+		return data.result;
+	}
+#endif
 
 	// SDL message box
 	// Button data
@@ -577,7 +601,6 @@ bool Oneshot::msgbox(int type, const char *body, const char *title)
 	#endif
 
 	return button ? true : false;
-#endif // #ifdef OS_LINUX
 }
 
 std::string Oneshot::textinput(const char* prompt, int char_limit, const char* fontName) {

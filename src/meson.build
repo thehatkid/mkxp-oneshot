@@ -88,7 +88,10 @@ if is_steam
 endif
 
 if host_system == 'linux'
-    src_files += files('xdg-user-dir-lookup.c')
+    src_files += files(
+        'gnome-fun.cpp',
+        'xdg-user-dir-lookup.c'
+    )
 endif
 
 mkxp_sources += src_files
