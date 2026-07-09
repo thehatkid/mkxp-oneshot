@@ -3,8 +3,10 @@
 
 #ifdef __cplusplus
 #include <cstddef>
+#include <cstdint>
 #else
 #include <stddef.h>
+#include <stdint.h>
 #endif
 
 /* Copy-paste of necessary prototypes and definitions from GNOME include files.
@@ -21,6 +23,10 @@ typedef unsigned short gushort;
 typedef unsigned long gulong;
 typedef float gfloat;
 typedef double gdouble;
+typedef int32_t gint32;
+typedef uint32_t guint32;
+typedef int64_t gint64;
+typedef uint64_t guint64;
 typedef size_t gsize;
 typedef gint gboolean;
 typedef void *gpointer;
@@ -30,13 +36,58 @@ typedef const void *gconstpointer;
 #ifndef __G_TYPE_H__
 typedef gsize GType;
 
+typedef struct _GValue GValue;
 typedef struct _GTypeClass GTypeClass;
 typedef struct _GTypeInstance GTypeInstance;
+
+#define G_TYPE_FUNDAMENTAL_SHIFT (2)
+
+#define	G_TYPE_MAKE_FUNDAMENTAL(x) ((GType)((x) << G_TYPE_FUNDAMENTAL_SHIFT))
+
+#define G_TYPE_INVALID G_TYPE_MAKE_FUNDAMENTAL(0)
+#define G_TYPE_DOUBLE G_TYPE_MAKE_FUNDAMENTAL(15)
 #endif // __G_TYPE_H__
+
+#ifndef __G_VALUE_H__
+struct _GValue
+{
+	GType g_type;
+
+	union
+	{
+		gint v_int;
+		guint v_uint;
+		glong v_long;
+		gulong v_ulong;
+		gint64 v_int64;
+		guint64 v_uint64;
+		gfloat v_float;
+		gdouble v_double;
+		gpointer v_pointer;
+	} data[2];
+};
+
+#define G_VALUE_INIT { 0, { { 0 } } }
+#endif // __G_VALUE_H__
 
 #ifndef __G_MAIN_H__
 typedef gboolean (*GSourceFunc)(gpointer user_data);
 #endif // __G_MAIN_H__
+
+#ifndef __G_QUARK_H__
+typedef guint32 GQuark;
+#endif // __G_QUARK_H__
+
+#ifndef __G_ERROR_H__
+typedef struct _GError GError;
+
+struct _GError
+{
+	GQuark domain;
+	gint code;
+	gchar *message;
+};
+#endif // __G_ERROR_H__
 
 #ifndef __GTK_H__
 typedef enum
@@ -117,6 +168,7 @@ typedef struct _GtkDialog GtkDialog;
 #endif // __GTK_H__
 
 /* Glib prototypes */
+typedef void (*GERRORFREEPROC)(GError *error);
 typedef guint (*GIDLEADDPROC)(GSourceFunc function, gpointer data);
 
 /* GObject prototypes */
@@ -142,6 +194,7 @@ typedef GtkWidget *(*GTKMESSAGEDIALOGNEWPROC)(GtkWindow *parent, GtkDialogFlags 
 #define GNOME_FUNC(name, type) type name;
 
 #define DYN_GLIB_FUNCS \
+	GNOME_FUNC(g_error_free, GERRORFREEPROC) \
 	GNOME_FUNC(g_idle_add, GIDLEADDPROC)
 
 #define DYN_GOBJECT_FUNCS \

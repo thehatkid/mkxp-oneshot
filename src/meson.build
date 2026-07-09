@@ -90,6 +90,7 @@ endif
 if host_system == 'linux'
     src_files += files(
         'gnome-fun.cpp',
+        'xfconf-fun.cpp',
         'xdg-user-dir-lookup.c'
     )
 endif
