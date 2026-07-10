@@ -28,7 +28,6 @@
 		#include "mac-desktop.h"
 		static bool isCached = false;
 	#else
-		#include <gio/gio.h>
 		#include <unistd.h>
 		#include <algorithm>
 		#include <iostream>
@@ -70,15 +69,15 @@
 	}
 
 	bool tryGetGSettings(const char* schema_id, GSettings** outSetting) {
-		GSettingsSchemaSource* schemaSource = g_settings_schema_source_get_default();
+		GSettingsSchemaSource* schemaSource = dynGio.g_settings_schema_source_get_default();
 		if (schemaSource == NULL) {
 			return false;
 		}
-		GSettingsSchema* schema = g_settings_schema_source_lookup(schemaSource, schema_id, true);
+		GSettingsSchema* schema = dynGio.g_settings_schema_source_lookup(schemaSource, schema_id, true);
 		if (schema == NULL) {
 			return false;
 		}
-		*outSetting = g_settings_new(schema_id);
+		*outSetting = dynGio.g_settings_new(schema_id);
 		return true;
 	}
 
@@ -105,10 +104,10 @@
 				picUriSettingKey = "picture-filename";
 			}
 			if (gSettingSuccess) {
-				defPictureURI = g_settings_get_string(bgsetting, picUriSettingKey);
-				defPictureOptions = g_settings_get_string(bgsetting, "picture-options");
-				defPrimaryColor = g_settings_get_string(bgsetting, "primary-color");
-				defColorShading = g_settings_get_string(bgsetting, "color-shading-type");
+				defPictureURI = dynGio.g_settings_get_string(bgsetting, picUriSettingKey);
+				defPictureOptions = dynGio.g_settings_get_string(bgsetting, "picture-options");
+				defPrimaryColor = dynGio.g_settings_get_string(bgsetting, "primary-color");
+				defColorShading = dynGio.g_settings_get_string(bgsetting, "color-shading-type");
 			} else {
 				desktop = "no_desktop";
 			}
@@ -317,13 +316,13 @@ end:
 		if (desktop == "cinnamon" || desktop == "gnome" || desktop == "mate" || desktop == "deepin") {
 			std::stringstream hexColor;
 			hexColor << "#" << std::hex << color;
-			g_settings_set_string(bgsetting, "picture-options", "scaled");
-			g_settings_set_string(bgsetting, "primary-color", hexColor.str().c_str());
-			g_settings_set_string(bgsetting, "color-shading-type", "solid");
+			dynGio.g_settings_set_string(bgsetting, "picture-options", "scaled");
+			dynGio.g_settings_set_string(bgsetting, "primary-color", hexColor.str().c_str());
+			dynGio.g_settings_set_string(bgsetting, "color-shading-type", "solid");
 			if (desktop == "cinnamon" || desktop == "gnome" || desktop == "deepin") {
-				g_settings_set_string(bgsetting, "picture-uri", ("file://" + gameDirStr + path).c_str());
+				dynGio.g_settings_set_string(bgsetting, "picture-uri", ("file://" + gameDirStr + path).c_str());
 			} else {
-				g_settings_set_string(bgsetting, "picture-filename", (gameDirStr + path).c_str());
+				dynGio.g_settings_set_string(bgsetting, "picture-filename", (gameDirStr + path).c_str());
 			}
 		} else if (desktop == "xfce") {
 			std::string concatPath(gameDirStr + path);
@@ -408,13 +407,13 @@ RB_METHOD(wallpaperReset)
 		desktopEnvironmentInit();
 		if (desktop == "cinnamon" || desktop == "gnome" || desktop == "mate" || desktop == "deepin") {
 			if (desktop == "cinnamon" || desktop == "gnome" || desktop == "deepin") {
-				g_settings_set_string(bgsetting, "picture-uri", defPictureURI.c_str());
+				dynGio.g_settings_set_string(bgsetting, "picture-uri", defPictureURI.c_str());
 			} else {
-				g_settings_set_string(bgsetting, "picture-filename", defPictureURI.c_str());
+				dynGio.g_settings_set_string(bgsetting, "picture-filename", defPictureURI.c_str());
 			}
-			g_settings_set_string(bgsetting, "picture-options", defPictureOptions.c_str());
-			g_settings_set_string(bgsetting, "primary-color", defPrimaryColor.c_str());
-			g_settings_set_string(bgsetting, "color-shading-type", defColorShading.c_str());
+			dynGio.g_settings_set_string(bgsetting, "picture-options", defPictureOptions.c_str());
+			dynGio.g_settings_set_string(bgsetting, "primary-color", defPrimaryColor.c_str());
+			dynGio.g_settings_set_string(bgsetting, "color-shading-type", defColorShading.c_str());
 		} else if (desktop == "xfce") {
 			if (defColorExists) {
 				dynXfconf.xfconf_channel_set_property(bgchannel, optionColor.c_str(), &defColor);

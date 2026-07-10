@@ -16,11 +16,13 @@
 
 struct GlibFunctions dynGlib {};
 struct GObjectFunctions dynGObject {};
+struct GioFunctions dynGio {};
 struct GtkFunctions dynGtk {};
 
-static void *soGlib = NULL;
-static void *soGObject = NULL;
-static void *soGtk = NULL;
+static void *soGlib = nullptr;
+static void *soGObject = nullptr;
+static void *soGio = nullptr;
+static void *soGtk = nullptr;
 
 void initGlibFunctions()
 {
@@ -58,6 +60,27 @@ void initGObjectFunctions()
 #undef GNOME_FUNC
 }
 
+void initGioFunctions()
+{
+	if (soGio != nullptr)
+		return;
+
+	soGio = SDL_LoadObject(SONAME_GIO);
+	if (soGio == nullptr) {
+		Debug() << "[gnome-fun] Unable to load Gio shared object:" << SDL_GetError();
+		return;
+	}
+
+#define GNOME_FUNC(name, type) \
+	dynGio.name = (type)SDL_LoadFunction(soGio, #name); \
+	if (dynGio.name == nullptr) \
+		Debug() << "[gnome-fun] Unable to load Gio function:" << SDL_GetError();
+
+	DYN_GIO_FUNCS
+
+#undef GNOME_FUNC
+}
+
 void initGtkFunctions()
 {
 	soGtk = SDL_LoadObject(SONAME_GTK_3);
@@ -80,5 +103,6 @@ void initGnomeFunctions()
 {
 	initGlibFunctions();
 	initGObjectFunctions();
+	initGioFunctions();
 	initGtkFunctions();
 }

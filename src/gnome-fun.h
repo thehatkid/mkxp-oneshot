@@ -52,7 +52,6 @@ typedef struct _GTypeInstance GTypeInstance;
 struct _GValue
 {
 	GType g_type;
-
 	union
 	{
 		gint v_int;
@@ -88,6 +87,16 @@ struct _GError
 	gchar *message;
 };
 #endif // __G_ERROR_H__
+
+#ifndef __GIO_TYPES_H__
+typedef struct _GSettings GSettings;
+#endif // __GIO_TYPES_H__
+
+#ifndef __G_SETTINGS_SCHEMA_H__
+typedef struct _GSettingsSchema GSettingsSchema;
+typedef struct _GSettingsSchemaSource GSettingsSchemaSource;
+typedef struct _GSettingsSchemaKey GSettingsSchemaKey;
+#endif // __G_SETTINGS_SCHEMA_H__
 
 #ifndef __GTK_H__
 typedef enum
@@ -175,6 +184,13 @@ typedef guint (*GIDLEADDPROC)(GSourceFunc function, gpointer data);
 typedef GTypeInstance *(*GTYPECHECKINSTANCECASTPROC)(GTypeInstance *instance, GType iface_typ);
 typedef GTypeClass *(*GTYPECHECKCLASSCAST)(GTypeClass *g_class, GType is_a_type);
 
+/* Gio prototypes */
+typedef GSettings *(*GSETTINGSNEWPROC)(const gchar *schema_id);
+typedef GSettingsSchemaSource *(*GSETTINGSSCHEMASOURCEGETDEFAULTPROC)(void);
+typedef GSettingsSchema *(*GSETTINGSSCHEMASOURCELOOKUPPROC)(GSettingsSchemaSource *source, const gchar *schema_id, gboolean recursive);
+typedef gchar *(*GSETTINGSGETSTRINGPROC)(GSettings *settings, const gchar *key);
+typedef gboolean (*GSETTINGSSETSTRINGPROC)(GSettings *settings, const gchar *key, const gchar *value);
+
 /* Gtk prototypes */
 typedef void (*GTKINITPROC)(int *argc, char ***argv);
 typedef gboolean (*GTKINITCHECKPROC)(int *argc, char ***argv);
@@ -200,6 +216,13 @@ typedef GtkWidget *(*GTKMESSAGEDIALOGNEWPROC)(GtkWindow *parent, GtkDialogFlags 
 #define DYN_GOBJECT_FUNCS \
 	GNOME_FUNC(g_type_check_instance_cast, GTYPECHECKINSTANCECASTPROC) \
 	GNOME_FUNC(g_type_check_class_cast, GTYPECHECKCLASSCAST)
+
+#define DYN_GIO_FUNCS \
+	GNOME_FUNC(g_settings_new, GSETTINGSNEWPROC) \
+	GNOME_FUNC(g_settings_schema_source_get_default, GSETTINGSSCHEMASOURCEGETDEFAULTPROC) \
+	GNOME_FUNC(g_settings_schema_source_lookup, GSETTINGSSCHEMASOURCELOOKUPPROC) \
+	GNOME_FUNC(g_settings_get_string, GSETTINGSGETSTRINGPROC) \
+	GNOME_FUNC(g_settings_set_string, GSETTINGSSETSTRINGPROC)
 
 #define DYN_GTK_FUNCS \
 	GNOME_FUNC(gtk_init, GTKINITPROC) \
@@ -227,6 +250,11 @@ struct GObjectFunctions
 	DYN_GOBJECT_FUNCS
 };
 
+struct GioFunctions
+{
+	DYN_GIO_FUNCS
+};
+
 struct GtkFunctions
 {
 	DYN_GTK_FUNCS
@@ -236,10 +264,12 @@ struct GtkFunctions
 
 extern struct GlibFunctions dynGlib;
 extern struct GObjectFunctions dynGObject;
+extern struct GioFunctions dynGio;
 extern struct GtkFunctions dynGtk;
 
 void initGlibFunctions();
 void initGObjectFunctions();
+void initGioFunctions();
 void initGtkFunctions();
 
 void initGnomeFunctions();
