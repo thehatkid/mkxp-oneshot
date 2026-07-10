@@ -22,8 +22,11 @@ oclint/
 *.gcda
 
 # General
+.cache/
+.clangd/
 .gdbinit
 .gdb_history
+compile_commands.json
 *.log
 *.tmp
 *.swp
@@ -60,7 +63,6 @@ Temporary Items
 .idea_modules/
 .vscode/*
 !.vscode/launch.json
-!.vscode/settings.json
 !.vscode/tasks.json
 .history/
 *.code-workspace
