@@ -597,29 +597,31 @@ static void mriBindingExecute()
 
 	Config &conf = shState->rtData().config;
 
-	std::vector<const char *> rubyArgsC {"oneshot"};
-	rubyArgsC.push_back("-e ");
+	std::vector<const char *> args = {"oneshot"};
+	args.push_back("-e ");
 
-	void *node = ruby_options(rubyArgsC.size(), const_cast<char**>(rubyArgsC.data()));
+	void *node = ruby_options(args.size(), const_cast<char **>(args.data()));
 
 	int state = 0;
-    bool valid = ruby_executable_node(node, &state);
-    if (valid)
-        state = ruby_exec_node(node);
-    if (state || !valid) {
-        showMsg("An error occurred while initializing Ruby");
-        ruby_cleanup(state);
+	int valid = ruby_executable_node(node, &state);
+	if (valid)
+		state = ruby_exec_node(node);
+	if (state || !valid) {
+		showMsg("An error occurred while initializing Ruby");
+		ruby_cleanup(state);
 		shState->rtData().allowExit.set();
-        shState->rtData().rqTermAck.set();
-        return;
-    }
-    rb_enc_set_default_external(rb_enc_from_encoding(rb_utf8_encoding()));
+		shState->rtData().rqTermAck.set();
+		return;
+	}
+
+	rb_enc_set_default_external(rb_enc_from_encoding(rb_utf8_encoding()));
+
+	/* Setup custom load paths */
+	VALUE lpaths = rb_gv_get(":");
+	rb_ary_clear(lpaths);
 
 	if (!conf.rubyLoadpaths.empty())
 	{
-		/* Setup custom load paths */
-		VALUE lpaths = rb_gv_get(":");
-
 		for (size_t i = 0; i < conf.rubyLoadpaths.size(); ++i)
 		{
 			std::string &path = conf.rubyLoadpaths[i];
