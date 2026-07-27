@@ -613,7 +613,6 @@ static void mriBindingExecute()
         shState->rtData().rqTermAck.set();
         return;
     }
-    rb_enc_set_default_internal(rb_enc_from_encoding(rb_utf8_encoding()));
     rb_enc_set_default_external(rb_enc_from_encoding(rb_utf8_encoding()));
 
 	if (!conf.rubyLoadpaths.empty())
