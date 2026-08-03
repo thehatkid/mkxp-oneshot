@@ -9,6 +9,9 @@ NPROC ?= $(shell nproc)
 # "make LTO=1" to build targets with LTO.
 LTO ?= 0
 
+# Specifies the architecture name for builds
+ARCH := $(shell uname -m)
+
 # Define build tools
 CC  ?= gcc
 CXX ?= g++
@@ -16,9 +19,6 @@ CXX ?= g++
 # Flags for builds
 CFLAGS  := -O2 -mtune=generic
 LDFLAGS :=
-
-# Specifies the architecture name for builds
-ARCH := $(shell uname -m)
 
 # Specifies the target triplet for builds
 TRIPLET := $(shell $(CC) -dumpmachine)
@@ -53,12 +53,13 @@ AC_ARGS := \
 CMAKE_ARGS := \
 	-DCMAKE_PREFIX_PATH="$(PREFIX)" \
 	-DCMAKE_INSTALL_PREFIX="$(PREFIX)" \
-	-DCMAKE_BUILD_TYPE=Release
+	-DCMAKE_BUILD_TYPE=Release \
+	-DCMAKE_POLICY_VERSION_MINIMUM=3.10
 
 # Shortcut commands
 GIT           := git clone -q -c advice.detachedHead=false --depth 1 --no-tags --single-branch
 CONFIGURE     := $(ENV) ../configure $(AC_ARGS)
-CMAKE         := $(ENV) cmake -S . -B "$(BDIR)" -G "Ninja" $(CMAKE_ARGS)
+CMAKE         := $(ENV) cmake -S . -B "$(BDIR)" -G "Ninja" --no-warn-unused-cli $(CMAKE_ARGS)
 CMAKE_BUILD   := cmake --build "$(BDIR)" -- -j $(NPROC)
 CMAKE_INSTALL := cmake --install "$(BDIR)"
 
@@ -74,8 +75,9 @@ OPTS_VORBIS := \
 
 OPTS_ZLIB := \
 	-DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-	-DZLIB_BUILD_SHARED=OFF \
-	-DZLIB_BUILD_TESTING=OFF
+	-DBUILD_SHARED_LIBS=OFF \
+	-DBUILD_TESTING=OFF \
+	-DZLIB_COMPAT=ON
 
 OPTS_PHYSFS := \
 	-DPHYSFS_BUILD_SHARED=OFF \
@@ -133,6 +135,7 @@ OPTS_OPENAL := \
 	-DLIBTYPE=STATIC \
 	-DALSOFT_STATIC_LIBGCC=ON \
 	-DALSOFT_STATIC_STDCXX=ON \
+	-DALSOFT_ENABLE_MODULES=OFF \
 	-DALSOFT_UTILS=OFF \
 	-DALSOFT_EXAMPLES=OFF
 
@@ -165,11 +168,12 @@ OPTS_RUBY := \
 	--prefix="$(PREFIX)" \
 	--host="$(TRIPLET)" \
 	--enable-shared \
-	--disable-rpath \
-	--enable-load-relative \
 	--disable-install-doc \
 	--disable-rubygems \
+	--disable-rpath \
+	--enable-load-relative \
 	--without-gmp \
+	--with-opt-dir="$(PREFIX)" \
 	--with-zlib-dir="$(PREFIX)" \
 	--with-libyaml-dir="$(PREFIX)" \
 	--with-libffi-dir="$(PREFIX)" \
@@ -297,25 +301,25 @@ $(DLDIR)/vorbis/CMakeLists.txt:
 
 # =================================== General ==================================
 
-# ------------------------------------ zlib ------------------------------------
+# ----------------------------------- zlib-ng ----------------------------------
 zlib: init $(LIBDIR)/libz.a
 
 $(LIBDIR)/libz.a: $(DLDIR)/zlib/$(BDIR)/libz.a
-	@printf "\e[94m=>\e[0m \e[36mInstalling zlib...\e[0m\n"
+	@printf "\e[94m=>\e[0m \e[36mInstalling zlib-ng...\e[0m\n"
 	@cd "$(DLDIR)/zlib"; $(CMAKE_INSTALL)
 	@touch -c "$@"
 
 $(DLDIR)/zlib/$(BDIR)/libz.a: $(DLDIR)/zlib/$(BDIR)/build.ninja
-	@printf "\e[94m=>\e[0m \e[36mBuilding zlib...\e[0m\n"
+	@printf "\e[94m=>\e[0m \e[36mBuilding zlib-ng...\e[0m\n"
 	@cd "$(DLDIR)/zlib"; $(CMAKE_BUILD)
 
 $(DLDIR)/zlib/$(BDIR)/build.ninja: $(DLDIR)/zlib/CMakeLists.txt
-	@printf "\e[94m=>\e[0m \e[36mConfiguring zlib...\e[0m\n"
+	@printf "\e[94m=>\e[0m \e[36mConfiguring zlib-ng...\e[0m\n"
 	@cd "$(DLDIR)/zlib"; $(CMAKE) $(OPTS_ZLIB)
 
 $(DLDIR)/zlib/CMakeLists.txt:
-	@printf "\e[94m=>\e[0m \e[36mDownloading zlib 1.3.2...\e[0m\n"
-	@$(GIT) -b v1.3.2 https://github.com/madler/zlib "$(DLDIR)/zlib"
+	@printf "\e[94m=>\e[0m \e[36mDownloading zlib-ng 2.3.3...\e[0m\n"
+	@$(GIT) -b 2.3.3 https://github.com/zlib-ng/zlib-ng "$(DLDIR)/zlib"
 
 # ----------------------------------- PhysFS -----------------------------------
 physfs: init $(LIBDIR)/libphysfs.a
@@ -376,8 +380,8 @@ $(DLDIR)/libjpeg/$(BDIR)/build.ninja: $(DLDIR)/libjpeg/CMakeLists.txt
 	@cd "$(DLDIR)/libjpeg"; $(CMAKE) $(OPTS_JPEG)
 
 $(DLDIR)/libjpeg/CMakeLists.txt:
-	@printf "\e[94m=>\e[0m \e[36mDownloading libjpeg-turbo 3.1.4.1...\e[0m\n"
-	@$(GIT) -b 3.1.4.1 https://github.com/libjpeg-turbo/libjpeg-turbo "$(DLDIR)/libjpeg"
+	@printf "\e[94m=>\e[0m \e[36mDownloading libjpeg-turbo 3.2.0...\e[0m\n"
+	@$(GIT) -b 3.2.0 https://github.com/libjpeg-turbo/libjpeg-turbo "$(DLDIR)/libjpeg"
 
 # ----------------------------------- Pixman -----------------------------------
 pixman: init $(LIBDIR)/libpixman-1.a
@@ -517,7 +521,7 @@ $(DLDIR)/openal/CMakeLists.txt:
 	@printf "\e[94m=>\e[0m \e[36mDownloading OpenAL 1.25.2...\e[0m\n"
 	@$(GIT) -b 1.25.2 https://github.com/kcat/openal-soft "$(DLDIR)/openal"
 
-# ============================== Ruby 3.1 and etc. =============================
+# ============================== Ruby 3.4 and etc. =============================
 
 # ----------------------------- libyaml (for Ruby) -----------------------------
 
@@ -564,8 +568,8 @@ $(DLDIR)/libffi/configure: $(DLDIR)/libffi/configure.ac
 	@cd "$(DLDIR)/libffi"; autoreconf -fi
 
 $(DLDIR)/libffi/configure.ac:
-	@printf "\e[94m=>\e[0m \e[36mDownloading libffi 3.5.2...\e[0m\n"
-	@$(GIT) -b v3.5.2 https://github.com/libffi/libffi "$(DLDIR)/libffi"
+	@printf "\e[94m=>\e[0m \e[36mDownloading libffi 3.7.1...\e[0m\n"
+	@$(GIT) -b v3.7.1 https://github.com/libffi/libffi "$(DLDIR)/libffi"
 
 # ----------------------------------- OpenSSL ----------------------------------
 openssl: init $(LIBDIR)/libssl.a
@@ -584,19 +588,19 @@ $(DLDIR)/openssl/$(BDIR)/Makefile: $(DLDIR)/openssl/Configure
 	@cd "$(DLDIR)/openssl/$(BDIR)"; CC="$(CC)" perl ../Configure $(OPTS_OPENSSL)
 
 $(DLDIR)/openssl/Configure:
-	@printf "\e[94m=>\e[0m \e[36mDownloading OpenSSL 3.0.21...\e[0m\n"
-	@$(GIT) -b openssl-3.0.21 https://github.com/openssl/openssl "$(DLDIR)/openssl"
+	@printf "\e[94m=>\e[0m \e[36mDownloading OpenSSL 3.5.7...\e[0m\n"
+	@$(GIT) -b openssl-3.5.7 https://github.com/openssl/openssl "$(DLDIR)/openssl"
 
 # ------------------------------------ Ruby ------------------------------------
-ruby: init zlib libyaml libffi openssl $(LIBDIR)/libruby.so.3.1
+ruby: init zlib libyaml libffi openssl $(LIBDIR)/libruby.so.3.4
 
-$(LIBDIR)/libruby.so.3.1: $(DLDIR)/ruby/$(BDIR)/libruby.so.3.1
+$(LIBDIR)/libruby.so.3.4: $(DLDIR)/ruby/$(BDIR)/libruby.so.3.4
 	@printf "\e[94m=>\e[0m \e[36mInstalling Ruby...\e[0m\n"
 	@cd "$(DLDIR)/ruby/$(BDIR)"; \
 	export DEBIAN_DISABLE_RUBYGEMS_INTEGRATION=1; \
 	make install
 
-$(DLDIR)/ruby/$(BDIR)/libruby.so.3.1: $(DLDIR)/ruby/$(BDIR)/Makefile
+$(DLDIR)/ruby/$(BDIR)/libruby.so.3.4: $(DLDIR)/ruby/$(BDIR)/Makefile
 	@printf "\e[94m=>\e[0m \e[36mBuilding Ruby...\e[0m\n"
 	@cd "$(DLDIR)/ruby/$(BDIR)"; make -j $(NPROC)
 
@@ -621,5 +625,5 @@ $(DLDIR)/ruby/configure: $(DLDIR)/ruby/configure.ac
 	@cd "$(DLDIR)/ruby"; autoreconf -fi
 
 $(DLDIR)/ruby/configure.ac:
-	@printf "\e[94m=>\e[0m \e[36mDownloading Ruby 3.1.7...\e[0m\n"
-	@$(GIT) -b v3_1_7 https://github.com/ruby/ruby "$(DLDIR)/ruby"
+	@printf "\e[94m=>\e[0m \e[36mDownloading Ruby 3.4.10...\e[0m\n"
+	@$(GIT) -b v3_4_10 https://github.com/ruby/ruby "$(DLDIR)/ruby"
