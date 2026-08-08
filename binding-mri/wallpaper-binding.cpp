@@ -40,7 +40,7 @@
 		static std::string desktop = "uninitialized";
 		// GNOME settings
 		static GSettings *bgsetting;
-		static std::string defPictureURI, defPictureOptions, defPrimaryColor, defColorShading;
+		static std::string defPictureURI, defPictureDarkURI, defPictureOptions, defPrimaryColor, defColorShading;
 		// XFCE settings
 		static XfconfChannel* bgchannel;
 		static int defPictureStyle;
@@ -105,6 +105,8 @@
 			}
 			if (gSettingSuccess) {
 				defPictureURI = dynGio.g_settings_get_string(bgsetting, picUriSettingKey);
+				if (desktop == "gnome")
+					defPictureDarkURI = dynGio.g_settings_get_string(bgsetting, "picture-uri-dark");
 				defPictureOptions = dynGio.g_settings_get_string(bgsetting, "picture-options");
 				defPrimaryColor = dynGio.g_settings_get_string(bgsetting, "primary-color");
 				defColorShading = dynGio.g_settings_get_string(bgsetting, "color-shading-type");
@@ -321,6 +323,8 @@ end:
 			dynGio.g_settings_set_string(bgsetting, "color-shading-type", "solid");
 			if (desktop == "cinnamon" || desktop == "gnome" || desktop == "deepin") {
 				dynGio.g_settings_set_string(bgsetting, "picture-uri", ("file://" + gameDirStr + path).c_str());
+				if (desktop == "gnome" && !defPictureDarkURI.empty())
+					dynGio.g_settings_set_string(bgsetting, "picture-uri-dark", ("file://" + gameDirStr + path).c_str());
 			} else {
 				dynGio.g_settings_set_string(bgsetting, "picture-filename", (gameDirStr + path).c_str());
 			}
@@ -408,6 +412,8 @@ RB_METHOD(wallpaperReset)
 		if (desktop == "cinnamon" || desktop == "gnome" || desktop == "mate" || desktop == "deepin") {
 			if (desktop == "cinnamon" || desktop == "gnome" || desktop == "deepin") {
 				dynGio.g_settings_set_string(bgsetting, "picture-uri", defPictureURI.c_str());
+				if (desktop == "gnome" && !defPictureDarkURI.empty())
+					dynGio.g_settings_set_string(bgsetting, "picture-uri-dark", defPictureDarkURI.c_str());
 			} else {
 				dynGio.g_settings_set_string(bgsetting, "picture-filename", defPictureURI.c_str());
 			}
