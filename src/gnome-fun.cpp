@@ -10,6 +10,8 @@
 #define SONAME_GOBJECT "libgobject-2.0.so.0"
 #define SONAME_GTK_3 "libgtk-3.so.0"
 #define SONAME_GTK_2 "libgtk-x11-2.0.so.0"
+#define SONAME_GDK_3 "libgdk-3.so.0"
+#define SONAME_GDK_2 "libgdk-x11-2.0.so.0"
 #else
 #error "Platform not supported"
 #endif
@@ -18,11 +20,13 @@ struct GlibFunctions dynGlib {};
 struct GObjectFunctions dynGObject {};
 struct GioFunctions dynGio {};
 struct GtkFunctions dynGtk {};
+struct GdkFunctions dynGdk {};
 
 static void *soGlib = nullptr;
 static void *soGObject = nullptr;
 static void *soGio = nullptr;
 static void *soGtk = nullptr;
+static void *soGdk = nullptr;
 
 void initGlibFunctions()
 {
@@ -99,10 +103,29 @@ void initGtkFunctions()
 #undef GNOME_FUNC
 }
 
+void initGdkFunctions()
+{
+	soGdk = SDL_LoadObject(SONAME_GDK_3);
+	if (soGdk == nullptr) {
+		Debug() << "[gnome-fun] Unable to load Gdk shared object:" << SDL_GetError();
+		return;
+	}
+
+#define GNOME_FUNC(name, type) \
+	dynGdk.name = (type)SDL_LoadFunction(soGdk, #name); \
+	if (dynGdk.name == nullptr) \
+		Debug() << "[gnome-fun] Unable to load Gdk function:" << SDL_GetError();
+
+	DYN_GDK_FUNCS
+
+#undef GNOME_FUNC
+}
+
 void initGnomeFunctions()
 {
 	initGlibFunctions();
 	initGObjectFunctions();
 	initGioFunctions();
 	initGtkFunctions();
+	initGdkFunctions();
 }

@@ -18,6 +18,7 @@ typedef gchar *(*XFCONFCHANNELGETSTRINGPROC)(XfconfChannel *channel, const gchar
 typedef gboolean (*XFCONFCHANNELSETSTRINGPROC)(XfconfChannel *channel, const gchar *property, const gchar *value);
 typedef gint32 (*XFCONFCHANNELGETINTPROC)(XfconfChannel *channel, const gchar *property, gint32 default_value);
 typedef gboolean (*XFCONFCHANNELSETINTPROC)(XfconfChannel *channel, const gchar *property, gint32 value);
+typedef gboolean (*XFCONFCHANNELGETARRAYPROC)(XfconfChannel *channel, const gchar *property, GType first_value_type, ...);
 typedef gboolean (*XFCONFCHANNELSETARRAYPROC)(XfconfChannel *channel, const gchar *property, GType first_value_type, ...);
 
 #define XFCONF_FUNC(name, type) type name;
@@ -33,6 +34,7 @@ typedef gboolean (*XFCONFCHANNELSETARRAYPROC)(XfconfChannel *channel, const gcha
 	XFCONF_FUNC(xfconf_channel_set_string, XFCONFCHANNELSETSTRINGPROC) \
 	XFCONF_FUNC(xfconf_channel_get_int, XFCONFCHANNELGETINTPROC) \
 	XFCONF_FUNC(xfconf_channel_set_int, XFCONFCHANNELSETINTPROC) \
+	XFCONF_FUNC(xfconf_channel_get_array, XFCONFCHANNELGETARRAYPROC) \
 	XFCONF_FUNC(xfconf_channel_set_array, XFCONFCHANNELSETARRAYPROC)
 
 struct XfconfFunctions

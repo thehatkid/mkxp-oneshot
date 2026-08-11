@@ -146,6 +146,11 @@ typedef struct _GtkWindow GtkWindow;
 typedef struct _GtkDialog GtkDialog;
 #endif // __GTK_H__
 
+#ifndef __GDK_H__
+typedef struct _GdkDisplay GdkDisplay;
+typedef struct _GdkMonitor GdkMonitor;
+#endif // __GDK_H__
+
 /* Implementation bits */
 #if defined(G_DISABLE_CAST_CHECKS) || defined(__OPTIMIZE__)
 #define _DYN_G_TYPE_CIC(ip, gt, ct) ((ct *)(void *)ip)
@@ -207,6 +212,15 @@ typedef gint (*GTKDIALOGRUNPROC)(GtkDialog *dialog);
 typedef GtkWidget *(*GTKDIALOGGETWIDGETFORRESPONSEPROC)(GtkDialog *dialog, gint response_id);
 typedef GtkWidget *(*GTKMESSAGEDIALOGNEWPROC)(GtkWindow *parent, GtkDialogFlags flags, GtkMessageType type, GtkButtonsType buttons, const gchar *message_format, ...);
 
+/* Gdk prototypes */
+typedef GdkDisplay *(*GDKDISPLAYOPENPROC)(const gchar *display_name);
+typedef GdkDisplay *(*GDKDISPLAYGETDEFAULTPROC)(void);
+typedef int (*GDKDISPLAYGETNMONITORSPROC)(GdkDisplay *display);
+typedef GdkMonitor *(*GDKDISPLAYGETMONITORPROC)(GdkDisplay *display, int monitor_num);
+typedef GdkMonitor *(*GDKDISPLAYGETPRIMARYMONITORPROC)(GdkDisplay *display);
+typedef const char *(*GDKMONITORGETMODELPROC)(GdkMonitor *monitor);
+typedef gboolean (*GDKMONITORISPRIMARYPROC)(GdkMonitor *monitor);
+
 #define GNOME_FUNC(name, type) type name;
 
 #define DYN_GLIB_FUNCS \
@@ -240,6 +254,15 @@ typedef GtkWidget *(*GTKMESSAGEDIALOGNEWPROC)(GtkWindow *parent, GtkDialogFlags 
 	GNOME_FUNC(gtk_dialog_get_widget_for_response, GTKDIALOGGETWIDGETFORRESPONSEPROC) \
 	GNOME_FUNC(gtk_message_dialog_new, GTKMESSAGEDIALOGNEWPROC)
 
+#define DYN_GDK_FUNCS \
+	GNOME_FUNC(gdk_display_open, GDKDISPLAYOPENPROC) \
+	GNOME_FUNC(gdk_display_get_default, GDKDISPLAYGETDEFAULTPROC) \
+	GNOME_FUNC(gdk_display_get_n_monitors, GDKDISPLAYGETNMONITORSPROC) \
+	GNOME_FUNC(gdk_display_get_monitor, GDKDISPLAYGETMONITORPROC) \
+	GNOME_FUNC(gdk_display_get_primary_monitor, GDKDISPLAYGETPRIMARYMONITORPROC) \
+	GNOME_FUNC(gdk_monitor_get_model, GDKMONITORGETMODELPROC) \
+	GNOME_FUNC(gdk_monitor_is_primary, GDKMONITORISPRIMARYPROC)
+
 struct GlibFunctions
 {
 	DYN_GLIB_FUNCS
@@ -260,17 +283,24 @@ struct GtkFunctions
 	DYN_GTK_FUNCS
 };
 
+struct GdkFunctions
+{
+	DYN_GDK_FUNCS
+};
+
 #undef GNOME_FUNC
 
 extern struct GlibFunctions dynGlib;
 extern struct GObjectFunctions dynGObject;
 extern struct GioFunctions dynGio;
 extern struct GtkFunctions dynGtk;
+extern struct GdkFunctions dynGdk;
 
 void initGlibFunctions();
 void initGObjectFunctions();
 void initGioFunctions();
 void initGtkFunctions();
+void initGdkFunctions();
 
 void initGnomeFunctions();
 
