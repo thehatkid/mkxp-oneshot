@@ -241,4 +241,11 @@ fileIntBindingInit()
 	VALUE marsh = rb_const_get(rb_cObject, rb_intern("Marshal"));
 	rb_define_alias(rb_singleton_class(marsh), "_mkxp_load_alias", "load");
 	_rb_define_module_function(marsh, "load", _marshalLoad);
+
+#if RUBY_API_TRIPLET >= 320
+	/* Define a method alias for the removed deprecated method `File#exists?`
+	 * for the compatibility reason when using Ruby version 3.2+ */
+	VALUE file = rb_singleton_class(rb_cFile);
+	rb_define_alias(file, "exists?", "exist?");
+#endif
 }
