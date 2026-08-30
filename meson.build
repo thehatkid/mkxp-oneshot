@@ -40,9 +40,7 @@ mkxp_name = 'oneshot'
 mkxp_sources = []
 mkxp_includes = []
 mkxp_dependencies = []
-mkxp_cflags = [
-    '-DHAVE_NANOSLEEP'
-]
+mkxp_cflags = []
 mkxp_ldflags = []
 
 if not is_debug
@@ -71,6 +69,9 @@ if host_system == 'windows'
 	#   To use them, you must first define _USE_MATH_DEFINES
 	#   and then include cmath or math.h."
 	mkxp_cflags += '-D_USE_MATH_DEFINES'
+
+    # Static executable
+    mkxp_ldflags += '-static'
 endif
 
 subdir('assets')

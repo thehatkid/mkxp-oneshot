@@ -6,6 +6,9 @@ prefix-*/
 /linux/downloads/
 /linux/build-*/
 /linux-*/
+/windows/downloads/
+/windows/build-*/
+/windows-*/
 steamworks_sdk/
 oclint/
 *.o

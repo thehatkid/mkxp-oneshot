@@ -23,13 +23,8 @@ mkxp_dependencies += [
 ]
 
 if host_system == 'windows'
-    # Newer versions of Ruby will refuse to link without these
-    explicit_libs = 'libmsvcrt;libgcc;libmingwex;libgmp;'
-    foreach l : explicit_libs.split(';')
-        if l != ''
-            mkxp_ldflags += '-l:' + l + '.a'
-        endif
-    endforeach
+    # Required for GetUserNameEx in oneshot.cpp
+    mkxp_dependencies += cc.find_library('secur32', required: true)
 endif
 
 src_files = files(
