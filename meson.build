@@ -23,6 +23,14 @@ is_debug = get_option('debug')
 is_steam = get_option('steam')
 is_64bit = (cc.sizeof('void*') == 8)
 
+# Semantic versioning format: MAJOR.MINOR.PATCH[-PRE_RELEASE]
+version_parts = meson.project_version().split('-')
+version_split = version_parts[0].split('.')
+version_major = version_split[0]
+version_minor = version_split[1]
+version_patch = version_split[2]
+version_suffix = version_parts.length() > 1 ? version_parts[1] : ''
+
 ruby = find_program('ruby', native: true, required: true)
 
 embed = generator(
@@ -79,6 +87,10 @@ subdir('shader')
 subdir('scripts')
 subdir('src')
 subdir('binding-mri')
+
+if host_system == 'windows'
+    subdir('windows')
+endif
 
 if get_option('copy_gamefiles')
 	# Copy game files to the build directory
