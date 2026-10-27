@@ -360,8 +360,8 @@ $(DLDIR)/libpng/$(BDIR)/build.ninja: $(DLDIR)/libpng/CMakeLists.txt
 	@cd "$(DLDIR)/libpng"; $(CMAKE) $(OPTS_PNG)
 
 $(DLDIR)/libpng/CMakeLists.txt:
-	@printf "\e[94m=>\e[0m \e[36mDownloading libpng 1.6.58...\e[0m\n"
-	@$(GIT) -b v1.6.58 https://github.com/pnggroup/libpng "$(DLDIR)/libpng"
+	@printf "\e[94m=>\e[0m \e[36mDownloading libpng 1.6.59...\e[0m\n"
+	@$(GIT) -b v1.6.59 https://github.com/pnggroup/libpng "$(DLDIR)/libpng"
 
 # ------------------------------------ JPEG ------------------------------------
 jpeg: init $(LIBDIR)/libjpeg.a
@@ -568,8 +568,8 @@ $(DLDIR)/libffi/configure: $(DLDIR)/libffi/configure.ac
 	@cd "$(DLDIR)/libffi"; autoreconf -fi
 
 $(DLDIR)/libffi/configure.ac:
-	@printf "\e[94m=>\e[0m \e[36mDownloading libffi 3.7.1...\e[0m\n"
-	@$(GIT) -b v3.7.1 https://github.com/libffi/libffi "$(DLDIR)/libffi"
+	@printf "\e[94m=>\e[0m \e[36mDownloading libffi 3.8.0...\e[0m\n"
+	@$(GIT) -b v3.8.0 https://github.com/libffi/libffi "$(DLDIR)/libffi"
 
 # ----------------------------------- OpenSSL ----------------------------------
 openssl: init $(LIBDIR)/libssl.a
@@ -588,8 +588,8 @@ $(DLDIR)/openssl/$(BDIR)/Makefile: $(DLDIR)/openssl/Configure
 	@cd "$(DLDIR)/openssl/$(BDIR)"; CC="$(CC)" perl ../Configure $(OPTS_OPENSSL)
 
 $(DLDIR)/openssl/Configure:
-	@printf "\e[94m=>\e[0m \e[36mDownloading OpenSSL 3.5.7...\e[0m\n"
-	@$(GIT) -b openssl-3.5.7 https://github.com/openssl/openssl "$(DLDIR)/openssl"
+	@printf "\e[94m=>\e[0m \e[36mDownloading OpenSSL 3.5.9...\e[0m\n"
+	@$(GIT) -b openssl-3.5.9 https://github.com/openssl/openssl "$(DLDIR)/openssl"
 
 # ------------------------------------ Ruby ------------------------------------
 ruby: init zlib libyaml libffi openssl $(LIBDIR)/libruby.so.3.4
@@ -625,5 +625,5 @@ $(DLDIR)/ruby/configure: $(DLDIR)/ruby/configure.ac
 	@cd "$(DLDIR)/ruby"; autoreconf -fi
 
 $(DLDIR)/ruby/configure.ac:
-	@printf "\e[94m=>\e[0m \e[36mDownloading Ruby 3.4.10...\e[0m\n"
-	@$(GIT) -b v3_4_10 https://github.com/ruby/ruby "$(DLDIR)/ruby"
+	@printf "\e[94m=>\e[0m \e[36mDownloading Ruby 3.4.11...\e[0m\n"
+	@$(GIT) -b v3_4_11 https://github.com/ruby/ruby "$(DLDIR)/ruby"
