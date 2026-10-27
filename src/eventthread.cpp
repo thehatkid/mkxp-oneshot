@@ -581,15 +581,12 @@ int EventThread::eventFilter(void *data, SDL_Event *event)
 		Debug() << "SDL_APP_LOWMEMORY";
 		return 0;
 
-	/* Workaround for Windows pausing on drag */
 	case SDL_WINDOWEVENT:
 		if (event->window.event == SDL_WINDOWEVENT_MOVED)
 		{
 			if (shState != NULL && shState->rgssVersion > 0)
-			{
 				shState->oneshot().setWindowPos(event->window.data1, event->window.data2);
-				shState->graphics().update(false);
-			}
+
 			return 0;
 		}
 		return 1;
