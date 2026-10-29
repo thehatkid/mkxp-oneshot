@@ -9,7 +9,7 @@
 static const char *const achievementNames[] = {
     "CHAOTIC_EVIL",
     "SHOCK",
-    "EXTREME_BARTENDING",
+    "EXTREME_BARTERING",
     "RAM_WHISPERER",
     "PANCAKES",
     "WE_RIDE_AT_DAWN",

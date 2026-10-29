@@ -15,13 +15,14 @@ project(
 )
 
 host_system = host_machine.system()
+host_cpu_family = host_machine.cpu_family()
 
 cc = meson.get_compiler('c')
 cxx = meson.get_compiler('cpp')
 
 is_debug = get_option('debug')
 is_steam = get_option('steam')
-is_64bit = (cc.sizeof('void*') == 8)
+is_64bit = host_cpu_family in ['x86_64', 'aarch64', 'mips64', 'ppc64']
 
 # Semantic versioning format: MAJOR.MINOR.PATCH[-PRE_RELEASE]
 version_parts = meson.project_version().split('-')
@@ -88,6 +89,66 @@ subdir('scripts')
 subdir('src')
 subdir('binding-mri')
 
+if is_steam
+    # Steamshim target for Steamworks integration
+    steamshim_name = 'steamshim'
+    steamshim_game = mkxp_name
+    steamshim_sources = files(
+        'steamshim_parent/steamshim_parent.cpp'
+    )
+    steamshim_includes = []
+    steamshim_cflags = [
+        '-DGAME_LAUNCH_NAME="@0@"'.format(steamshim_game)
+    ]
+    steamshim_ldflags = []
+    steamshim_subsystem = 'windows,6.00'
+
+    if is_debug
+        steamshim_cflags += '-DSTEAMSHIM_DEBUG'
+        steamshim_subsystem = 'console,6.00'
+    endif
+
+    if host_system == 'windows'
+        steamshim_ldflags += '-static'
+    else
+        steamshim_ldflags += ['-static-libgcc', '-static-libstdc++']
+    endif
+
+    # Steamworks SDK library declaration
+    steamworks_root = meson.project_source_root() / 'steamworks_sdk'
+    steamworks_include = include_directories('steamworks_sdk' / 'public')
+    steamworks_libpath = steamworks_root / 'redistributable_bin'
+
+    steamworks_libname = 'steam_api'
+    if host_system == 'windows'
+        if is_64bit
+            steamworks_libpath = steamworks_libpath / 'win64'
+            steamworks_libname += '64'
+        endif
+    elif host_system == 'linux'
+        if 'aarch64' in host_cpu_family
+            steamworks_libpath = steamworks_libpath / 'linuxarm64'
+        elif is_64bit
+            steamworks_libpath = steamworks_libpath / 'linux64'
+        else
+            steamworks_libpath = steamworks_libpath / 'linux32'
+        endif
+    elif host_system == 'darwin'
+        steamworks_libpath = steamworks_libpath / 'osx'
+    else
+        error('Unsupported host system for Steamworks SDK')
+    endif
+
+    steamworks_lib = cc.find_library(
+        steamworks_libname,
+        dirs: [steamworks_libpath],
+        required: false
+    )
+    if not steamworks_lib.found()
+        error('Could not locate Steamworks SDK library in @0@'.format(steamworks_libpath))
+    endif
+endif
+
 if host_system == 'windows'
     subdir('windows')
 endif
@@ -111,7 +172,24 @@ executable(
     cpp_args: mkxp_cflags,
     link_args: mkxp_ldflags,
     install: true,
-    win_subsystem: 'windows,6.0',
+    win_subsystem: 'windows,6.00',
     build_rpath: '$ORIGIN',
     install_rpath: '$ORIGIN'
 )
+
+if is_steam and steamworks_lib.found()
+    # Steamshim executable
+    executable(
+        steamshim_name,
+        sources: steamshim_sources,
+        include_directories: [steamworks_include, steamshim_includes],
+        dependencies: [steamworks_lib],
+        c_args: steamshim_cflags,
+        cpp_args: steamshim_cflags,
+        link_args: steamshim_ldflags,
+        install: true,
+        win_subsystem: steamshim_subsystem,
+        build_rpath: '$ORIGIN',
+        install_rpath: '$ORIGIN'
+    )
+endif

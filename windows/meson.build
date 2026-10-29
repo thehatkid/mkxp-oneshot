@@ -25,6 +25,18 @@ win_config_mkxp.set('MANIFEST_FILE', 'manifest.xml')
 win_config_mkxp.set('MANIFEST_DESC', 'OneShot')
 win_config_mkxp.set('ASSEMBLY_NAME', 'FutureCatGames.OneShot')
 
+if is_steam
+    win_config_steamshim = configuration_data()
+    win_config_steamshim.merge_from(win_config)
+    win_config_steamshim.set('FILE_DESC', 'OneShot Steamshim')
+    win_config_steamshim.set('PRODUCT_NAME', 'OneShot')
+    win_config_steamshim.set('FILENAME', '@0@.exe'.format(steamshim_name))
+    win_config_steamshim.set('ICON_FILE', 'icon.ico')
+    win_config_steamshim.set('MANIFEST_FILE', 'steamshim-manifest.xml')
+    win_config_steamshim.set('MANIFEST_DESC', 'OneShot Steamshim')
+    win_config_steamshim.set('ASSEMBLY_NAME', 'FutureCatGames.OneShot.Steamshim')
+endif
+
 # mkxp Windows resources
 win_mkxp_manifest = configure_file(
     input: 'manifest.xml.in',
@@ -50,3 +62,31 @@ win_resources_mkxp = win.compile_resources(
 )
 
 mkxp_sources += win_resources_mkxp
+
+# Steamshim Windows resources
+if is_steam
+    win_steamshim_manifest = configure_file(
+        input: 'manifest.xml.in',
+        output: 'steamshim-manifest.xml',
+        configuration: win_config_steamshim
+    )
+    win_steamshim_resource = configure_file(
+        input: 'resource.rc.in',
+        output: 'steamshim-resource.rc',
+        configuration: win_config_steamshim
+    )
+
+    win_resources_steamshim = win.compile_resources(
+        win_steamshim_resource,
+        args: win_rc_args,
+        include_directories: [
+            include_directories('.')
+        ],
+        depend_files: [
+            'icon.ico',
+            win_steamshim_manifest
+        ]
+    )
+
+    steamshim_sources += win_resources_steamshim
+endif

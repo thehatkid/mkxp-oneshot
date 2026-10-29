@@ -9,7 +9,7 @@
 typedef PROCESS_INFORMATION ProcessType;
 typedef HANDLE PipeType;
 #define NULLPIPE NULL
-#define LLUFMT "%I64u"
+#define LLUFMT "%I64llu"
 #else
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +26,7 @@ typedef int PipeType;
 #include <stdlib.h>
 
 #include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
 
 #ifdef STEAMSHIM_DEBUG
 #define dbgpipe printf
@@ -393,7 +394,7 @@ static bool writeAchievementGet(PipeType fd, const char *name, const int status,
 {
     uint8 buf[256];
     uint8 *ptr = buf+1;
-    dbgpipe("Parent sending SHIMEVENT_GETACHIEVEMENT('%s', status %d, time " LLUFMT ").\n", name, status, (unsigned long long) time);
+    dbgpipe("Parent sending SHIMEVENT_GETACHIEVEMENT('%s', status %d, time " LLUFMT ").\n", name, status, (long long unsigned)time);
     *(ptr++) = (uint8) SHIMEVENT_GETACHIEVEMENT;
     *(ptr++) = (uint8) status;
     memcpy(ptr, &time, sizeof (time));
@@ -510,7 +511,7 @@ static bool processCommand(const uint8 *buf, unsigned int buflen, PipeType fd)
             return false;
 
         case SHIMCMD_REQUESTSTATS:
-            if ((!GSteamStats) || (!GSteamStats->RequestCurrentStats()))
+            if ((!GSteamStats))
                 writeStatsReceived(fd, false);
             // callback later.
             break;
@@ -542,10 +543,10 @@ static bool processCommand(const uint8 *buf, unsigned int buflen, PipeType fd)
             {
                 const char *name = (const char *) buf;   // !!! FIXME: buffer overflow possible.
                 bool ach = false;
-	            uint32 t = 0;
+                uint32 t = 0;
                 if ((GSteamStats) && (GSteamStats->GetAchievementAndUnlockTime(name, &ach, &t)))
                     writeAchievementGet(fd, name, ach ? 1 : 0, t);
-	            else
+                else
                     writeAchievementGet(fd, name, 2, 0);
             } // if
             break;
@@ -668,13 +669,13 @@ static bool setEnvironmentVars(PipeType pipeChildRead, PipeType pipeChildWrite)
     return true;
 } // setEnvironmentVars
 
-static bool initSteamworks(PipeType fd)
+static bool initSteamworks(PipeType fd, SteamErrMsg *errMsg)
 {
     // this can fail for many reasons:
     //  - you forgot a steam_appid.txt in the current working directory.
     //  - you don't have Steam running
     //  - you don't own the game listed in steam_appid.txt
-    if (!SteamAPI_Init())
+    if (SteamAPI_InitEx(errMsg) != k_ESteamAPIInitResult_OK)
         return 0;
 
     GSteamStats = SteamUserStats();
@@ -683,8 +684,8 @@ static bool initSteamworks(PipeType fd)
     GSteamFriends = SteamFriends();
     GSteamApps = SteamApps();
 
-    GAppID = GSteamUtils ? GSteamUtils->GetAppID() : 0;
-	GUserID = GSteamUser ? GSteamUser->GetSteamID().ConvertToUint64() : 0;
+    GAppID = GSteamUtils ? SteamAPI_ISteamUtils_GetAppID(GSteamUtils) : 0;
+    GUserID = GSteamUser ? SteamAPI_ISteamUser_GetSteamID(GSteamUser) : 0;
     GSteamBridge = new SteamBridge(fd);
 
     return 1;
@@ -710,11 +711,14 @@ static int mainline(void)
 
     dbgpipe("Parent starting mainline.\n");
 
+    SteamErrMsg errMsg;
     if (!createPipes(&pipeParentRead, &pipeParentWrite, &pipeChildRead, &pipeChildWrite))
         fail("Failed to create application pipes");
-    else if (!initSteamworks(pipeParentWrite))
-        fail("Failed to initialize Steamworks");
-    else if (!setEnvironmentVars(pipeChildRead, pipeChildWrite))
+    else if (!initSteamworks(pipeParentWrite, &errMsg)) {
+        char msg[512];
+        snprintf(msg, sizeof(msg), "Failed to initialize Steamworks: %s", errMsg);
+        fail(msg);
+    } else if (!setEnvironmentVars(pipeChildRead, pipeChildWrite))
         fail("Failed to set environment variables");
     else if (!launchChild(&childPid))
         fail("Failed to launch application");
